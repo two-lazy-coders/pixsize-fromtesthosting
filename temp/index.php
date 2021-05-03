@@ -1,21 +1,32 @@
 <?php
-
 include 'inc/header.php';
 
 if( !isset($_POST["process"]) && isset($_POST["submit"])  ){
+	
+	//var_dump($_POST);
+	//var_dump($_FILES);
 	$num = count($_FILES['images']['name']);
+	
+	
+	
     //+сохранить файлы,
     //переименовать,
-    for($i = 0; $i<$num; $i++){
-		$file = $_FILES["images"]["tmp_name"][$i];
-		$file_name = $_FILES["images"]["name"][$i];
-		copy($file, "Upload/$file_name");
-	}
+    
+    
+    
     //сгенерировать страницу,
     //вложить сценарий со страницей
     include 'inc/liner.php';
 }
 elseif( isset($_POST["process"]) ){
+	for($i = 0; $i<$num; $i++){
+		$file = $_FILES["images"]["tmp_name"][$i];
+		$file_name = $_FILES["images"]["name"][$i];
+		//echo $file_name."\n";
+		copy($file, "Upload/$file_name");
+	}
+
+	echo "Processing\n";
     //декодировать json
     	$values = json_decode($_POST["process"], true);
     //пройтись циклом по файлам
@@ -58,7 +69,8 @@ elseif( isset($_POST["process"]) ){
 		    imagedestroy($src);
 		    unlink($filename);
 	    }
-	}
+		
+  	}
 
 	$folders = scandir("Upload");
 	$zip = new ZipArchive();
@@ -77,8 +89,12 @@ elseif( isset($_POST["process"]) ){
 				}
 			}
 		}
+		//rmdir("Upload/".$folder);
 	}
+	echo "numfiles: " . $zip->numFiles . "\n";
+	echo "status:" . $zip->status . "\n";
 	$zip->close();
+	
 	
 	foreach($folders as $folder){
 		if(is_dir("Upload/".$folder) && substr($folder, 0, 1) != "."){
@@ -90,14 +106,29 @@ elseif( isset($_POST["process"]) ){
 			}
 			rmdir("Upload/".$folder);
 		}
+		
 	}	
     //заархивировать файлы и отдать пользователю
     //удалить все к херам
 
+header('Content-Description: File Transfer');
+header('Content-Type: application/octet-stream');
+header('Content-Disposition: attachment; filename="'.basename($filename).'"');
+header('Expires: 0');
+header('Cache-Control: must-revalidate');
+header('Pragma: public');
+header('Content-Length: ' . filesize($filename));
+
+file_get_contents($filename);
+unlink($filename);
+exit;    
+/*    // Будем передавать PDF
 header('Content-Type: application/zip');
 header('Content-Disposition: attachment; filename="images.zip"');
-readfile($filename);
-unlink($filename);   
+
+// Исходный файл
+readfile($filename);*/
+unlink($filename);
 }
 else
 {
